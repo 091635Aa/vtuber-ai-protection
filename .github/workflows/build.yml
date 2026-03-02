@@ -34,17 +34,13 @@ jobs:
             python3-pip \
             libffi-dev \
             libssl-dev \
-            libncurses5 \
-            libncurses5-dev \
+            libncurses-dev \
             libsqlite3-dev \
             libjpeg-dev \
             zlib1g-dev \
             libfreetype6-dev \
             liblcms2-dev \
-            libgl1-mesa-dev \
-            libgstreamer1.0-dev \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good
+            libgl1-mesa-dev
 
       - name: 🧪 Install Python dependencies
         run: |

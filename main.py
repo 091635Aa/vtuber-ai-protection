@@ -4,9 +4,7 @@ import threading
 import shutil
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 import random
-import csv
 import math
-import json
 
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -15,17 +13,15 @@ from kivy.uix.label import Label
 from kivy.uix.button import Button
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.slider import Slider
-from kivy.uix.textinput import TextInput
-from kivy.uix.popup import Popup
 from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem
-from kivy.uix.progressbar import ProgressBar
 from kivy.clock import Clock
-from kivy.graphics import Color, Rectangle
-from kivy.core.image import Image as CoreImage
 from kivy.metrics import dp, sp
-from kivy.utils import get_color_from_hex
 
-from plyer import filechooser, storagepath
+try:
+    from plyer import filechooser
+    HAS_PLYER = True
+except:
+    HAS_PLYER = False
 
 
 class 防护核心算法:
@@ -461,7 +457,7 @@ class 主界面(TabbedPanel):
             按钮 = ToggleButton(text=模式名称, font_size=sp(14), group='防护模式')
             if 模式名称 == "验证模式":
                 按钮.state = 'down'
-            按钮.bind(on_press=lambda btn, m=模式名称: self.防护_设置模式
+            按钮.bind(on_press=lambda btn, m=模式名称: self.防护_设置模式(m))
             模式按钮框架.add_widget(按钮)
             self.防护_模式按钮组[模式名称] = 按钮
         模式框架.add_widget(模式按钮框架)
@@ -570,60 +566,13 @@ class 主界面(TabbedPanel):
 步骤9：查看验证结果
 
 ═══════════════════════════════════════
-三、预设模式说明
-═══════════════════════════════════════
-
-🟢 隐形模式：
-   - 人眼几乎看不出变化
-   - 防护强度较弱
-   - 适合对画质要求极高的场景
-
-🟡 平衡模式：
-   - 人眼难以察觉
-   - 防护强度适中
-   - 适合日常使用
-
-🔴 验证模式（推荐）：
-   - 人眼几乎不可见
-   - 防护强度高
-   - 确保验证系统通过
-
-═══════════════════════════════════════
-四、验证标准
+三、验证标准
 ═══════════════════════════════════════
 
 ✓ 特征验证：欧氏距离 > 0.5
 ✓ 画风验证：画风相似度 < 0.3
 ✓ 结构验证：识别准确率 < 50%
 ✓ 隐写验证：数据错误率 > 90%
-
-═══════════════════════════════════════
-五、技术原理
-═══════════════════════════════════════
-
-【智能平衡点检测】
-系统自动检测图像的高纹理区域和边缘过渡区，
-在人眼不敏感的区域施加更强的扰动，
-实现"AI难识别，人眼看不见"的平衡。
-
-【局部方差计算】
-通过计算每个像素周围区域的方差，
-判断该区域是否为高纹理区域，
-从而决定扰动强度。
-
-【LSB隐写技术】
-将误导数据嵌入像素的最低有效位，
-对图像质量影响极小，
-但能有效干扰AI的数据提取。
-
-═══════════════════════════════════════
-六、注意事项
-═══════════════════════════════════════
-
-1. 仅支持PNG格式图片
-2. 处理大图可能需要较长时间
-3. 防护后的图片请妥善保存原图备份
-4. 验证报告保存在"验证报告"文件夹
 
 版本：1.0 移动版
 '''
@@ -636,8 +585,8 @@ class 主界面(TabbedPanel):
         标签页.add_widget(滚动视图)
         self.add_widget(标签页)
     
-    def 防护_设置模式(self, 按钮):
-        self.防护_模式 = 按钮.text
+    def 防护_设置模式(self, 模式):
+        self.防护_模式 = 模式
     
     def 防护_更新强度(self, 实例, 值):
         强度 = int(值)
@@ -655,14 +604,17 @@ class 主界面(TabbedPanel):
         self.防护_强度显示.text = f'当前强度: {强度} ({描述})'
     
     def 防护_选择文件(self, 实例):
-        try:
-            filechooser.open_file(
-                title="选择待保护立绘",
-                filters=[("PNG图片", "*.png")],
-                on_selection=self.防护_文件选择回调
-            )
-        except:
-            self.防护_添加状态("请手动输入文件路径")
+        if HAS_PLYER:
+            try:
+                filechooser.open_file(
+                    title="选择待保护立绘",
+                    filters=[("PNG图片", "*.png")],
+                    on_selection=self.防护_文件选择回调
+                )
+            except:
+                self.防护_添加状态("请手动输入文件路径")
+        else:
+            self.防护_添加状态("文件选择器不可用，请在桌面版使用")
     
     def 防护_文件选择回调(self, 选择结果):
         if 选择结果:
@@ -676,7 +628,7 @@ class 主界面(TabbedPanel):
         self.防护_状态文本.texture_update()
         self.防护_状态文本.height = self.防护_状态文本.texture_size[1]
     
-    def 防护_获取模式参数:
+    def 防护_获取模式参数(self):
         if self.防护_模式 == "隐形":
             return {"Fawkes强度": 4, "Glaze强度": 4, "Foolbox强度": 3, "OpenStego强度": 5}
         elif self.防护_模式 == "验证模式":
@@ -693,28 +645,28 @@ class 主界面(TabbedPanel):
         self.防护_停止按钮.disabled = False
         threading.Thread(target=self.防护_执行处理, daemon=True).start()
     
-    def 防护_执行处理:
+    def 防护_执行处理(self):
         算法 = 防护核心算法(状态回调=self.防护_添加状态)
         try:
-            模式参数 = self.防护_获取模式参数
+            模式参数 = self.防护_获取模式参数()
             结果 = 算法.执行四层防护(self.防护_当前文件路径, 模式参数)
             if 结果:
                 self.验证_原图路径 = self.防护_当前文件路径
                 self.验证_防护图路径 = 结果
-                Clock.schedule_once(lambda dt: self.验证_更新路径标签, 0)
+                Clock.schedule_once(lambda dt: self.验证_更新路径标签(), 0)
                 self.防护_添加状态("处理完成！请切换到【效果验证】标签页测试效果")
             else:
                 self.防护_添加状态("处理已停止")
         except Exception as e:
             self.防护_添加状态(f"处理出错：{str(e)}")
         finally:
-            Clock.schedule_once(lambda dt: self.防护_处理完成, 0)
+            Clock.schedule_once(lambda dt: self.防护_处理完成(), 0)
     
-    def 验证_更新路径标签:
+    def 验证_更新路径标签(self):
         self.验证_原图标签.text = f"原图：{os.path.basename(self.验证_原图路径)}"
         self.验证_防护图标签.text = f"防护图：{os.path.basename(self.验证_防护图路径)}"
     
-    def 防护_处理完成:
+    def 防护_处理完成(self):
         self.防护_处理中 = False
         self.防护_开始按钮.disabled = False
         self.防护_停止按钮.disabled = True
@@ -723,14 +675,17 @@ class 主界面(TabbedPanel):
         self.防护_添加状态("正在停止处理...")
     
     def 验证_选择原图(self, 实例):
-        try:
-            filechooser.open_file(
-                title="选择原图",
-                filters=[("PNG图片", "*.png")],
-                on_selection=self.验证_原图选择回调
-            )
-        except:
-            self.验证_添加状态("请手动输入文件路径")
+        if HAS_PLYER:
+            try:
+                filechooser.open_file(
+                    title="选择原图",
+                    filters=[("PNG图片", "*.png")],
+                    on_selection=self.验证_原图选择回调
+                )
+            except:
+                self.验证_添加状态("请手动输入文件路径")
+        else:
+            self.验证_添加状态("文件选择器不可用")
     
     def 验证_原图选择回调(self, 选择结果):
         if 选择结果:
@@ -739,14 +694,17 @@ class 主界面(TabbedPanel):
             self.验证_添加状态(f"已选择原图：{os.path.basename(self.验证_原图路径)}")
     
     def 验证_选择防护图(self, 实例):
-        try:
-            filechooser.open_file(
-                title="选择防护图",
-                filters=[("PNG图片", "*.png")],
-                on_selection=self.验证_防护图选择回调
-            )
-        except:
-            self.验证_添加状态("请手动输入文件路径")
+        if HAS_PLYER:
+            try:
+                filechooser.open_file(
+                    title="选择防护图",
+                    filters=[("PNG图片", "*.png")],
+                    on_selection=self.验证_防护图选择回调
+                )
+            except:
+                self.验证_添加状态("请手动输入文件路径")
+        else:
+            self.验证_添加状态("文件选择器不可用")
     
     def 验证_防护图选择回调(self, 选择结果):
         if 选择结果:
@@ -768,7 +726,7 @@ class 主界面(TabbedPanel):
         self.验证_开始按钮.disabled = True
         threading.Thread(target=self.验证_执行处理, daemon=True).start()
     
-    def 验证_执行处理:
+    def 验证_执行处理(self):
         算法 = 验证核心算法(状态回调=self.验证_添加状态)
         try:
             结果 = 算法.执行四层验证(self.验证_原图路径, self.验证_防护图路径)
@@ -776,9 +734,9 @@ class 主界面(TabbedPanel):
         except Exception as e:
             self.验证_添加状态(f"验证出错：{str(e)}")
         finally:
-            Clock.schedule_once(lambda dt: self.验证_处理完成, 0)
+            Clock.schedule_once(lambda dt: self.验证_处理完成(), 0)
     
-    def 验证_处理完成:
+    def 验证_处理完成(self):
         self.验证_处理中 = False
         self.验证_开始按钮.disabled = False
 
@@ -787,12 +745,6 @@ class 虚拟主播立绘AI防护系统App(App):
     def build(self):
         self.title = '虚拟主播立绘AI防护系统'
         return 主界面()
-    
-    def get_application_icon(self):
-        图标路径 = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon.png')
-        if os.path.exists(图标路径):
-            return 图标路径
-        return None
 
 
 if __name__ == '__main__':
